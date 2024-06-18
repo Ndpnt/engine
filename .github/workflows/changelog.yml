@@ -18,10 +18,13 @@ jobs:
     outputs:
       no_functional_changes: ${{ steps.set_no_functional_changes.outputs.no_functional_changes }}
     steps:
-      - name: Use changelog manager
-        uses: OpenTermsArchive/manage-changelog/changelog-manager@v1
-        with:
-          action: 'check-functional-changes'
+      - name: Use common changelog action
+        id: check-functional-changes
+        uses: OpenTermsArchive/manage-changelog/check-functional-changes@v1
+        # with:
+        #   repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Print Output
+        run: echo "${{ steps.check-functional-changes.outputs.no_functional_changes }}"
 
   validate_changelog:
     if: ${{ needs.check_functional_changes.outputs.no_functional_changes != 'true' }}
@@ -51,3 +54,4 @@ jobs:
 
       - name: Print Output
         run: echo "${{ steps.get-release-type.outputs.type }}"
+        
