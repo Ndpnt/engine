@@ -50,13 +50,25 @@ jobs:
         run: |
           echo "Should this run NOT trigger any release: '${{ needs.check_functional_changes.outputs.no_release }}'"
 
-      - name: Run Changelog Manager
+      # - name: Validate changelog
+      #   run: npm run changelog --silent -- --validate
+
+      - name: Validate changelog
         uses: OpenTermsArchive/manage-changelog@v1
         with:
-          validate: true
+          action: 'validate'
+
+      # - name: Get release type in changelog
+      #   run: echo "RELEASE_TYPE=$(npm run changelog --silent -- --get-release-type)" >> $GITHUB_ENV
 
       - name: Get release type in changelog
-        run: echo "RELEASE_TYPE=$(npm run changelog --silent -- --get-release-type)" >> $GITHUB_ENV
+        id: get-release-type
+        uses: OpenTermsArchive/manage-changelog@v1
+        with:
+          action: 'get-release-type'
+          
+      - name: Get release type in changelog
+        run: echo "RELEASE_TYPE=${{ steps.get-release-type.outputs.type }}" >> $GITHUB_ENV
 
       - name: Make release type available to subsequent jobs # For backwards compatibility, as this workflow is used in other Open Terms Archive repositories
         if: env.RELEASE_TYPE
