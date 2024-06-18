@@ -42,4 +42,3 @@ jobs:
         uses: OpenTermsArchive/manage-changelog/changelog-manager@v1
         with:
           action: 'validate'
-          changelogPath: 'CHANGELOG.md'
