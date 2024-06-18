@@ -11,68 +11,35 @@ on:
       no_functional_changes:
         description: A boolean signaling that there are no functional changes in the changeset
         value: ${{ jobs.check_functional_changes.outputs.no_functional_changes }}
-  
 
 jobs:
   check_functional_changes:
-    runs-on: [ ubuntu-latest ]
+    runs-on: ubuntu-latest
     outputs:
       no_functional_changes: ${{ steps.set_no_functional_changes.outputs.no_functional_changes }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Make release type available to subsequent jobs # For backwards compatibility, as this workflow is used in other Open Terms Archive repositories
-        run: |
-          if grep -q "## Unreleased \[no-release\]" CHANGELOG.md; then
-            echo "NO_FUNCTIONAL_CHANGES=true" >> $GITHUB_ENV
-          fi
-      
-      - name: Print result
-        id: set_no_functional_changes
-        run: |
-          echo "no_functional_changes='${{ env.NO_FUNCTIONAL_CHANGES }}'"
-          echo "no_functional_changes=${{ env.NO_FUNCTIONAL_CHANGES }}" >> $GITHUB_OUTPUT
-  
+      - name: Use common changelog action
+        uses: OpenTermsArchive/manage-changelog/check-functional-changes@v1.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
   validate_changelog:
     if: ${{ needs.check_functional_changes.outputs.no_functional_changes != 'true' }}
     needs: [ check_functional_changes ]
-    runs-on: [ ubuntu-latest ]
+    runs-on: ubuntu-latest
     outputs:
       release_type: ${{ steps.set_release_type_output.outputs.release_type }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Use validate changelog action
+        uses: OpenTermsArchive/manage-changelog/validate-changelog@v1.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Print no release assessment result
-        run: |
-          echo "Should this run NOT trigger any release: '${{ needs.check_functional_changes.outputs.no_release }}'"
-
-      # - name: Validate changelog
-      #   run: npm run changelog --silent -- --validate
-
-      - name: Validate changelog
-        uses: OpenTermsArchive/manage-changelog@v1
+  manage_changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use changelog manager
+        uses: OpenTermsArchive/manage-changelog/changelog-manager@v1.0.0
         with:
           action: 'validate'
-
-      # - name: Get release type in changelog
-      #   run: echo "RELEASE_TYPE=$(npm run changelog --silent -- --get-release-type)" >> $GITHUB_ENV
-
-      - name: Get release type in changelog
-        id: get-release-type
-        uses: OpenTermsArchive/manage-changelog@v1
-        with:
-          action: 'get-release-type'
-          
-      - name: Get release type in changelog
-        run: echo "RELEASE_TYPE=${{ steps.get-release-type.outputs.type }}" >> $GITHUB_ENV
-
-      - name: Make release type available to subsequent jobs # For backwards compatibility, as this workflow is used in other Open Terms Archive repositories
-        if: env.RELEASE_TYPE
-        id: set_release_type_output
-        run: |
-          echo "Found release type '${{ env.RELEASE_TYPE }}'"
-          echo "release_type=${{ env.RELEASE_TYPE }}" >> $GITHUB_OUTPUT
+          changelogPath: 'CHANGELOG.md'
