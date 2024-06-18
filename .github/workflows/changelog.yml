@@ -40,12 +40,14 @@ jobs:
     outputs:
       release_type: ${{ steps.get-release-type.outputs.type }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
       - name: Use changelog manager
         uses: OpenTermsArchive/manage-changelog/changelog-manager@v1
         id: get-release-type
         with:
           action: 'get-release-type'
-          changelogPath: '../CHANGELOG.md'
 
       - name: Print Output
         run: echo "${{ steps.get-release-type.outputs.type }}"
