@@ -5,7 +5,7 @@ on:
 
 jobs:
   changelog:
-    uses: "./changelog.yml@main"
+    uses: "./.github/workflows/changelog.yml@main"
   release:
     if: needs.changelog.outputs.release-type != 'no-release'
     needs: [ changelog ]
