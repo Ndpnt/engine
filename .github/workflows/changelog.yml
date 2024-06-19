@@ -44,7 +44,7 @@ jobs:
 
       - name: Validate changelog
         id: validate-changelog
-        uses: OpenTermsArchive/changelog-action/validate@v1
+        uses: OpenTermsArchive/manage-changelog/validate@v1
 
       # - name: Install dependencies
       #   run: npm ci

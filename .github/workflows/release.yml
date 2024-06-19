@@ -32,7 +32,7 @@ jobs:
 
       - name: Release changelog
         id: release-changelog
-        uses: OpenTermsArchive/changelog-action/release@v1
+        uses: OpenTermsArchive/manage-changelog/release@v1
         with:
           pull-request-number: ${{ github.event.number }}
 
@@ -99,7 +99,7 @@ jobs:
           git config --global user.email "release-bot@opentermsarchive.org"
 
       - name: Release changelog
-        uses: OpenTermsArchive/changelog-action/release@v1
+        uses: OpenTermsArchive/manage-changelog/release@v1
 
       - name: Erase unreleased information from changelog
         run: |
