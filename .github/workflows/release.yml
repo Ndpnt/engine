@@ -1,14 +1,11 @@
 name: Release
 
 on:
-  pull_request_target:
-    branches: 
-      - main
-    types: [ closed ]
+  push:
 
 jobs:
   changelog:
-    uses: "OpenTermsArchive/engine/.github/workflows/changelog.yml@main"
+    uses: "./changelog.yml@main"
   release:
     if: needs.changelog.outputs.release-type != 'no-release'
     needs: [ changelog ]
