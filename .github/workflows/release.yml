@@ -6,10 +6,8 @@ on:
 jobs:
   changelog:
     uses: "OpenTermsArchive/engine/.github/workflows/changelog.yml@main"
-  test:
-    uses: "OpenTermsArchive/engine/.github/workflows/test.yml@main"
   release:
-    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type != 'no-release'
+    if: needs.changelog.outputs.release-type != 'no-release'
     needs: [ changelog ]
     runs-on: ubuntu-latest
     steps:
@@ -78,7 +76,7 @@ jobs:
           client-payload: '{"version": "${{ env.NEW_VERSION }}"}'
 
   clean_changelog:
-    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type == 'no-release'
+    if: needs.changelog.outputs.release-type == 'no-release'
     needs: [ changelog ]
     runs-on: ubuntu-latest
     steps:

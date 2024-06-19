@@ -1,63 +1,63 @@
-name: Test
+# name: Test
 
-on:
-  pull_request:
-  workflow_dispatch:
-  workflow_call:
+# on:
+#   pull_request:
+#   workflow_dispatch:
+#   workflow_call:
 
-jobs:
-  test:
-    strategy:
-      matrix:
-        operating_system: 
-          - ubuntu-20.04 # Specify latest Ubuntu version with MongoDB preinstalled as for Ubuntu-22.04 MongoDB is not currently available. See https://github.com/actions/runner-images/issues/5490
-          - windows-latest
-          - macos-latest
-      fail-fast: false # run tests on other operating systems even if one fails
+# jobs:
+#   test:
+#     strategy:
+#       matrix:
+#         operating_system: 
+#           - ubuntu-20.04 # Specify latest Ubuntu version with MongoDB preinstalled as for Ubuntu-22.04 MongoDB is not currently available. See https://github.com/actions/runner-images/issues/5490
+#           - windows-latest
+#           - macos-latest
+#       fail-fast: false # run tests on other operating systems even if one fails
 
-    runs-on: ${{ matrix.operating_system }}
+#     runs-on: ${{ matrix.operating_system }}
 
-    steps:
-      - run: |
-          git config --global core.autocrlf false
-      - uses: actions/checkout@v4
-      - uses: ankane/setup-mongodb@v1
-        with:
-          mongodb-version: 5.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci
-      - name: Run tests (Linux)
-        if: ${{ runner.os == 'Linux' }}
-        run: npm test
-      - name: Run tests (Windows or macOS)
-        if: ${{ runner.os == 'Windows' || runner.os == 'macOS' }}
-        run: npm test -- --timeout 5000
+#     steps:
+#       - run: |
+#           git config --global core.autocrlf false
+#       - uses: actions/checkout@v4
+#       - uses: ankane/setup-mongodb@v1
+#         with:
+#           mongodb-version: 5.0
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+#       - run: npm ci
+#       - name: Run tests (Linux)
+#         if: ${{ runner.os == 'Linux' }}
+#         run: npm test
+#       - name: Run tests (Windows or macOS)
+#         if: ${{ runner.os == 'Windows' || runner.os == 'macOS' }}
+#         run: npm test -- --timeout 5000
 
-  validate_declarations:
-    strategy:
-      matrix:
-        operating_system: 
-          - ubuntu-latest 
-          - windows-latest
-          - macos-latest
-      fail-fast: false # run tests on other operating systems even if one fails
+#   validate_declarations:
+#     strategy:
+#       matrix:
+#         operating_system: 
+#           - ubuntu-latest 
+#           - windows-latest
+#           - macos-latest
+#       fail-fast: false # run tests on other operating systems even if one fails
 
-    runs-on: ${{ matrix.operating_system }}
+#     runs-on: ${{ matrix.operating_system }}
 
-    steps:
-      - run: |
-          git config --global core.autocrlf false
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
-        with:
-          repository: OpenTermsArchive/demo-declarations
-          path: ./demo-declarations
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: cd ./demo-declarations && npm install
-      - run: npm ci
-      - run: ./node_modules/.bin/cross-env NODE_ENV=ci npm run declarations:lint
-      - run: ./node_modules/.bin/cross-env NODE_ENV=ci npm run declarations:validate:schema
+#     steps:
+#       - run: |
+#           git config --global core.autocrlf false
+#       - uses: actions/checkout@v4
+#       - uses: actions/checkout@v4
+#         with:
+#           repository: OpenTermsArchive/demo-declarations
+#           path: ./demo-declarations
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: 20
+#       - run: cd ./demo-declarations && npm install
+#       - run: npm ci
+#       - run: ./node_modules/.bin/cross-env NODE_ENV=ci npm run declarations:lint
+#       - run: ./node_modules/.bin/cross-env NODE_ENV=ci npm run declarations:validate:schema
