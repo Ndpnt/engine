@@ -19,4 +19,4 @@ jobs:
 
       - name: Validate changelog
         id: validate-changelog
-        uses: OpenTermsArchive/changelog-action/validate@v0.1.0
+        uses: OpenTermsArchive/changelog-action/validate@0.1.0

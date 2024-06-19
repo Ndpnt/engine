@@ -23,7 +23,7 @@ jobs:
 
       - name: Release changelog
         id: release-changelog
-        uses: OpenTermsArchive/changelog-action/release@v0.1.0
+        uses: OpenTermsArchive/changelog-action/release@0.1.0
 
       - name: Print Output
         run: echo "${{ steps.release-changelog.outputs.version }}"
@@ -88,7 +88,7 @@ jobs:
           git config --global user.email "release-bot@opentermsarchive.org"
 
       - name: Release changelog
-        uses: OpenTermsArchive/changelog-action/release@v0.1.0
+        uses: OpenTermsArchive/changelog-action/release@0.1.0
 
       - name: Erase unreleased information from changelog
         run: |
