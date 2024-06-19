@@ -20,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
         run: npm ci
@@ -51,7 +51,7 @@ jobs:
       - name: Run status checks for release commit on temporary branch # Use temporary branch to enable pushing commits to this branch protected by required status checks 
         uses: CasperWA/push-protected@v2
         with:
-          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
           unprotect_reviews: true
 
@@ -69,7 +69,7 @@ jobs:
         with:
           tag_name: ${{ env.NEW_VERSION }}
           body: ${{ steps.release-changelog.outputs.content }}
-          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to NPM public repository
         uses: JS-DevTools/npm-publish@v1
@@ -91,7 +91,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git author
         run: |
