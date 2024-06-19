@@ -13,7 +13,7 @@ jobs:
   test:
     uses: "OpenTermsArchive/engine/.github/workflows/test.yml@main"
   release:
-    if: github.event.pull_request.merged == true && needs.changelog.outputs.no_functional_changes != 'true'
+    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type != 'no-release'
     needs: [ changelog, test ]
     runs-on: ubuntu-latest
     steps:
@@ -30,13 +30,15 @@ jobs:
           git config --global user.name "Open Terms Archive Release Bot"
           git config --global user.email "release-bot@opentermsarchive.org"
 
+      - name: Release changelog
+        id: release-changelog
+        uses: OpenTermsArchive/changelog-action/release@v1
+        with:
+          pull-request-number: ${{ github.event.number }}
+
       - name: Bump package version
         run: |
-          echo "Release type found: '$(npm run changelog --silent -- --get-release-type)'"
-          echo "NEW_VERSION=$(npm --no-git-tag-version version $(npm run changelog --silent -- --get-release-type))" >> $GITHUB_ENV
-
-      - name: Update changelog unreleased section with new version
-        run: npm run changelog --silent -- --release ${{ github.event.number }} # github.event.number refers to the pull request number
+          echo "NEW_VERSION=$(npm --no-git-tag-version version ${{ steps.release-changelog.outputs.release-type }})" >> $GITHUB_ENV
 
       - name: Commit CHANGELOG.md and package.json changes and create tag
         run: |
@@ -66,7 +68,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.NEW_VERSION }}
-          body: ${{ env.VERSION_CHANGELOG }}
+          body: ${{ steps.release-changelog.outputs.content }}
           token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
 
       - name: Publish to NPM public repository
@@ -83,24 +85,23 @@ jobs:
           client-payload: '{"version": "${{ env.NEW_VERSION }}"}'
 
   clean_changelog:
-    if: github.event.pull_request.merged == true && needs.changelog.outputs.no_functional_changes == 'true'
+    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type == 'no-release'
     needs: [ changelog ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
-      
-      - name: Install dependencies
-        run: npm ci
 
       - name: Configure Git author
         run: |
           git config --global user.name "Open Terms Archive Release Bot"
           git config --global user.email "release-bot@opentermsarchive.org"
 
+      - name: Release changelog
+        uses: OpenTermsArchive/changelog-action/release@v1
+
       - name: Erase unreleased information from changelog
         run: |
-          npm run changelog --silent -- --clean-unreleased
           git commit -m "Clean changelog" CHANGELOG.md
           git push origin
