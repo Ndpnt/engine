@@ -4,7 +4,7 @@ All changes that impact users of this module are documented in this file, in the
 
 ## Unreleased [no-release]
 
-_No code changes were made in this release_
+_No code changes were made in this release._
 
 ## 4.0.0 - 2024-06-19
 
