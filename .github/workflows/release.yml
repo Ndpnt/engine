@@ -1,11 +1,7 @@
 name: Release
 
 on:
-  pull_request_target:
-    branches: 
-      - main
-    types: [ closed ]
-
+  push:
 
 jobs:
   changelog:
@@ -22,9 +18,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Configure Git author
         run: |
           git config --global user.name "Open Terms Archive Release Bot"
@@ -35,6 +28,12 @@ jobs:
         uses: OpenTermsArchive/manage-changelog/release@v1
         with:
           pull-request-number: ${{ github.event.number }}
+
+      - name: Print Output
+        run: echo "${{ steps.release-changelog.outputs.release-type }}"
+
+      - name: Print Output
+        run: echo "${{ steps.release-changelog.outputs.content }}"
 
       - name: Bump package version
         run: |
@@ -57,12 +56,6 @@ jobs:
 
       - name: Push changes to repository
         run: git push origin && git push --tags
-
-      - name: Read version changelog
-        run: |
-          echo "VERSION_CHANGELOG<<EOF" >> $GITHUB_ENV
-          echo "$(npm run changelog --silent -- --get-version-content ${{ env.NEW_VERSION }})" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v1
