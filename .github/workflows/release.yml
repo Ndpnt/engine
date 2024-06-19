@@ -27,8 +27,6 @@ jobs:
       - name: Release changelog
         id: release-changelog
         uses: OpenTermsArchive/manage-changelog/release@v1
-        with:
-          pull-request-number: ${{ github.event.number }}
 
       - name: Print Output
         run: echo "${{ steps.release-changelog.outputs.version }}"
