@@ -20,7 +20,7 @@
     "./sourceDocument": "./src/archivist/services/sourceDocument.js"
   },
   "bin": {
-    "ota": "./bin/ota.js"
+    "ota": "bin/ota.js"
   },
   "files": [
     "bin",
