@@ -12,7 +12,6 @@ jobs:
     uses: "./.github/workflows/changelog.yml"
   release:
     needs: [ changelog ]
-    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type != 'no-release'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
