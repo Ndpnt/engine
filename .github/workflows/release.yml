@@ -4,12 +4,14 @@ on:
   push:
 
 permissions:
-  id-token: write  # Required for OIDC
+  id-token: write  # Required for OIDC. See https://docs.npmjs.com/trusted-publishers#step-2-configure-your-cicd-workflow
   contents: read
 
 jobs:
   changelog:
     uses: "./.github/workflows/changelog.yml"
+  test:
+    uses: "OpenTermsArchive/engine/.github/workflows/test.yml@main"
   release:
     needs: [ changelog ]
     runs-on: ubuntu-latest
@@ -53,6 +55,36 @@ jobs:
 
       - name: Update npm
         run: npm install -g npm@latest
-      - run: npm ci
-      - run: npm --version
-      - run: npm publish
+      
+      - name: Publish to NPM public repository
+        run: npm publish
+
+      - name: Trigger documentation deploy
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.TRIGGER_DOCS_DEPLOY_TOKEN }}
+          event-type: engine-release
+          repository: OpenTermsArchive/docs
+          client-payload: '{"version": "v${{ steps.release-changelog.outputs.version }}"}'
+
+  clean_changelog:
+    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type == 'no-release'
+    needs: [ changelog ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+
+      - name: Configure Git author
+        run: |
+          git config --global user.name "Open Terms Archive Release Bot"
+          git config --global user.email "release-bot@opentermsarchive.org"
+
+      - name: Update changelog for release
+        uses: OpenTermsArchive/changelog-action/release@v0.2.0
+
+      - name: Save changelog
+        run: |
+          git commit -m "Clean changelog" CHANGELOG.md
+          git push origin
