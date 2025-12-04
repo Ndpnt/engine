@@ -10,6 +10,16 @@ All changes that impact users of this module are documented in this file, in the
 
 - Fix nothing
 
+## 10.1.3 - 2025-12-04
+
+_Full changeset and discussions: [#1](https://github.com/Ndpnt/engine/pull/1)._
+
+> Development of this release was made on a volunteer basis by [@Ndpnt](http://github.com/ndpnt).
+
+### Fixed
+
+- Fix nothing
+
 ## 10.1.2 - 2025-12-03
 
 _Full changeset and discussions: [#1](https://github.com/Ndpnt/engine/pull/1)._
