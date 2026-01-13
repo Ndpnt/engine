@@ -1,0 +1,74 @@
+name: Prepare Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  changelog:
+    if: github.event.pull_request.merged == true
+    uses: "./.github/workflows/changelog.yml"
+
+  prepare:
+    needs: [changelog]
+    if: needs.changelog.outputs.release-type != 'no-release'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release-changelog.outputs.version }}
+      release-notes: ${{ steps.release-changelog.outputs.content }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Configure Git author
+        run: |
+          git config --global user.name "Open Terms Archive Release Bot"
+          git config --global user.email "release-bot@opentermsarchive.org"
+
+      - name: Update changelog for release
+        id: release-changelog
+        uses: OpenTermsArchive/changelog-action/release@v0.2.0
+
+      - name: Bump package version
+        run: npm --no-git-tag-version version ${{ steps.release-changelog.outputs.version }}
+
+      - name: Commit CHANGELOG.md and package.json changes and create tag
+        run: |
+          git add "package.json"
+          git add "package-lock.json"
+          git add "CHANGELOG.md"
+          git commit -m "Release v${{ steps.release-changelog.outputs.version }}"
+          git tag v${{ steps.release-changelog.outputs.version }}
+          git push origin main && git push --tags
+
+  clean_changelog:
+    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type == 'no-release'
+    needs: [changelog]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
+
+      - name: Configure Git author
+        run: |
+          git config --global user.name "Open Terms Archive Release Bot"
+          git config --global user.email "release-bot@opentermsarchive.org"
+
+      - name: Update changelog for release
+        uses: OpenTermsArchive/changelog-action/release@v0.2.0
+
+      - name: Save changelog
+        run: |
+          git commit -m "Clean changelog" CHANGELOG.md
+          git push origin main
