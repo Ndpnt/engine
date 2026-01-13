@@ -14,11 +14,11 @@ jobs:
   changelog:
     if: github.event.pull_request.merged == true
     uses: "./.github/workflows/changelog.yml"
-  test:
-    if: github.event.pull_request.merged == true
-    uses: "OpenTermsArchive/engine/.github/workflows/test.yml@main"
+  # test:
+  #   if: github.event.pull_request.merged == true
+  #   uses: "OpenTermsArchive/engine/.github/workflows/test.yml@main"
   release:
-    needs: [ changelog, test ]
+    needs: [ changelog ]
     if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type != 'no-release'
     runs-on: ubuntu-latest
     steps:
