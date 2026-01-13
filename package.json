@@ -4,11 +4,11 @@
   "description": "Tracks and makes visible changes to the terms of online services",
   "homepage": "https://opentermsarchive.org",
   "bugs": {
-    "url": "https://github.com/ota-sandbox/engine/issues"
+    "url": "https://github.com/Ndpnt/engine/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ota-sandbox/engine.git"
+    "url": "git+https://github.com/Ndpnt/engine.git"
   },
   "license": "EUPL-1.2",
   "author": "Open Terms Archive contributors",
