@@ -11,16 +11,18 @@ permissions:
 
 jobs:
   changelog:
-    if: github.event.pull_request.merged == true
     uses: "./.github/workflows/changelog.yml"
   # test:
   #   if: github.event.pull_request.merged == true
   #   uses: "OpenTermsArchive/engine/.github/workflows/test.yml@main"
   release:
     needs: [ changelog ]
-    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type != 'no-release'
+    if: needs.changelog.outputs.release-type != 'no-release'
     runs-on: ubuntu-latest
     steps:
+      - name: Dump github.event (pretty)
+        run: |
+          echo '${{ toJson(github.event) }}' | jq .
       - name: Checkout
         uses: actions/checkout@v4
         with:
