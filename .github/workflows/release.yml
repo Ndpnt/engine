@@ -1,7 +1,8 @@
 name: Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
 
@@ -11,12 +12,14 @@ permissions:
 
 jobs:
   changelog:
+    if: github.event.pull_request.merged == true
     uses: "./.github/workflows/changelog.yml"
   test:
+    if: github.event.pull_request.merged == true
     uses: "OpenTermsArchive/engine/.github/workflows/test.yml@main"
   release:
     needs: [ changelog, test ]
-    if: needs.changelog.outputs.release-type != 'no-release'
+    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type != 'no-release'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -75,7 +78,7 @@ jobs:
           client-payload: '{"version": "v${{ steps.release-changelog.outputs.version }}"}'
 
   clean_changelog:
-    if: needs.changelog.outputs.release-type == 'no-release'
+    if: github.event.pull_request.merged == true && needs.changelog.outputs.release-type == 'no-release'
     needs: [ changelog ]
     runs-on: ubuntu-latest
     steps:
