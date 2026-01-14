@@ -4,31 +4,85 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Run in dry-run mode (no publish, no push)'
+        required: false
+        default: true
+        type: boolean
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   id-token: write  # Required for OIDC. See https://docs.npmjs.com/trusted-publishers#step-2-configure-your-cicd-workflow
   contents: read
 
 jobs:
+  release-decision:
+    if: ${{ !inputs.dry-run }}
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.decision.outputs.should_release }}
+      pr_number: ${{ steps.decision.outputs.pr_number }}
+    steps:
+      - name: Decide release
+        id: decision
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMITTER_EMAIL: ${{ github.event.head_commit.committer.email }}
+        shell: bash
+        run: |
+          # Skip if commit is from release bot (avoid infinite loop)
+          if [[ "$COMMITTER_EMAIL" == 'release-bot@opentermsarchive.org' ]]; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Extract PR number from commit message (squash-merge format)
+          if [[ "$COMMIT_MESSAGE" =~ \(\#([0-9]+)\)$ ]]; then
+            PR="${BASH_REMATCH[1]}"
+          else
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Check if PR was merged to main
+          PR_JSON=$(gh pr view "$PR" \
+            --repo "${{ github.repository }}" \
+            --json merged,baseRefName 2>/dev/null || true)
+
+          if [[ "$(echo "$PR_JSON" | jq -r '.merged')" == "true" &&
+                "$(echo "$PR_JSON" | jq -r '.baseRefName')" == "main" ]]; then
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+            echo "pr_number=$PR" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
   changelog:
     uses: "./.github/workflows/changelog.yml"
   test:
     uses: "OpenTermsArchive/engine/.github/workflows/test.yml@main"
   release:
-    needs: [ changelog, test ]
-    if: needs.changelog.outputs.release-type != 'no-release'
+    needs: [ release-decision, changelog, test ]
+    if: ${{ inputs.dry-run || (needs.release-decision.outputs.should_release && needs.changelog.outputs.release-type != 'no-release') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ inputs.dry-run && github.ref || 'main' }}
           token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
 
       - name: Configure Git author
         run: |
@@ -53,21 +107,32 @@ jobs:
       # Publish to NPM first, before pushing to repository
       # If this fails, no changes are pushed to the repository, ensuring consistency
       - name: Publish to NPM public repository
-        run: npm publish --provenance
+        run: npm publish --provenance ${{ inputs.dry-run && '--dry-run' || '' }}
 
       # Only push to repository after successful NPM publish
       - name: Push changes to repository
+        if: ${{ !inputs.dry-run }}
         run: git push origin main && git push --tags
 
+      - name: Dry-run summary
+        if: ${{ inputs.dry-run }}
+        run: |
+          echo "🧪 Dry-run mode - no publish or push performed"
+          echo "Version that would be released: v${{ steps.release-changelog.outputs.version }}"
+          git log -1 --oneline
+          git tag -l | tail -5
+
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        if: ${{ !inputs.dry-run }}
+        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2
         with:
           tag_name: v${{ steps.release-changelog.outputs.version }}
           body: ${{ steps.release-changelog.outputs.content }}
           token: ${{ secrets.RELEASE_BOT_GITHUB_TOKEN }}
 
       - name: Trigger documentation deploy
-        uses: peter-evans/repository-dispatch@v2
+        if: ${{ !inputs.dry-run }}
+        uses: peter-evans/repository-dispatch@bf47d102fdb849e755b0b0023ea3e81a44b6f570 # v2
         with:
           token: ${{ secrets.TRIGGER_DOCS_DEPLOY_TOKEN }}
           event-type: engine-release
@@ -75,8 +140,8 @@ jobs:
           client-payload: '{"version": "v${{ steps.release-changelog.outputs.version }}"}'
 
   clean_changelog:
-    if: needs.changelog.outputs.release-type == 'no-release'
-    needs: [ changelog ]
+    needs: [ release-decision, changelog ]
+    if: ${{ !needs.release-decision.outputs.should_release && needs.changelog.outputs.release-type == 'no-release' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
